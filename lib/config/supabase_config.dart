@@ -14,7 +14,7 @@ class SupabaseConfig {
 
   /// Your Supabase anon/public key
   static const String anonKey =
-      'sb_publishable_lrGm0fEJH7l29x3HByrzow_MhGMa8dNkey';
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpeG5nYnh2a3dmb3B2cnl2cGtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMDA5NDUsImV4cCI6MjA5ODU3Njk0NX0.WmmM2dxL1_BdeiL3nIvbO8TZUtvQ88sg2YNBvKLdJKM';
 
   /// Whether to use mock data (set to true to skip Supabase connection)
   static bool get useMockData => false;
