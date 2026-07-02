@@ -1,0 +1,51 @@
+name: pantry_sync
+description: "Pantry-Sync: The Frictionless Kitchen Agent - Smart fridge monitoring with AI-powered recipe suggestions"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # State management
+  provider: ^6.1.2
+
+  # Supabase (database + auth + realtime)
+  supabase_flutter: ^2.8.4
+
+  # HTTP & API
+  http: ^1.2.2
+  dio: ^5.7.0
+
+  # Charts for energy usage
+  fl_chart: ^0.70.2
+
+  # Local storage
+  shared_preferences: ^2.3.4
+
+  # Icons
+  flutter_svg: ^2.0.17
+
+  # Animations
+  lottie: ^3.3.1
+
+  # Google Generative AI (Gemini for recipe agent)
+  google_generative_ai: ^0.4.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/

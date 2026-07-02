@@ -1,0 +1,41 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+.vscode/
+
+# Platform-specific
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/flutter_export_environment.sh
+macos/Pods/
+macos/Flutter/ephemeral/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+lib/generated_plugin_registrant.dart
+
+# Environment & secrets
+.env
+*.env
+lib/config/secrets.dart
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+*.lcov
+
+# Pub
+.pub-cache/
+.pub/
+pubspec.lock
