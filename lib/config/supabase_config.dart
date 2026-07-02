@@ -10,14 +10,12 @@
 /// Use environment variables or .env in production.
 class SupabaseConfig {
   /// Your Supabase project URL
-  /// Example: 'https://xyzcompany.supabase.co'
-  static const String url = 'YOUR_SUPABASE_URL';
+  static const String url = 'https://qixngbxvkwfopvryvpkk.supabase.co';
 
   /// Your Supabase anon/public key
-  /// This is safe to use in client apps (Row Level Security protects data)
-  static const String anonKey = 'YOUR_SUPABASE_ANON_KEY';
+  static const String anonKey =
+      'sb_publishable_lrGm0fEJH7l29x3HByrzow_MhGMa8dNkey';
 
-  /// Whether to use mock data (set to false when Supabase is configured)
-  static bool get useMockData =>
-      url == 'YOUR_SUPABASE_URL' || anonKey == 'YOUR_SUPABASE_ANON_KEY';
+  /// Whether to use mock data (set to true to skip Supabase connection)
+  static bool get useMockData => false;
 }
