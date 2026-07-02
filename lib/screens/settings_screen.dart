@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -15,40 +18,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _doorAlerts = true;
   bool _expiryReminders = true;
   bool _weeklyReport = false;
-  String _selectedLanguage = 'English';
   String _selectedTheme = 'System';
   String _temperatureUnit = 'Celsius (°C)';
-
-  final List<String> _languages = [
-    'English',
-    'Malay (Bahasa Melayu)',
-    'Chinese (中文)',
-    'Tamil (தமிழ்)',
-  ];
 
   final List<String> _themes = ['Light', 'Dark', 'System'];
   final List<String> _tempUnits = ['Celsius (°C)', 'Fahrenheit (°F)'];
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final localeProvider = context.watch<LocaleProvider>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l.settings),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           // ─── NOTIFICATIONS ───────────────────────────────────
-          _buildSectionHeader('🔔 Notifications'),
+          _buildSectionHeader('🔔 ${l.notifications}'),
           const SizedBox(height: 12),
 
           Card(
             child: Column(
               children: [
                 SwitchListTile(
-                  title: const Text(
-                    'Enable Notifications',
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                  title: Text(
+                    l.enableNotifications,
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
                   ),
                   subtitle: const Text('Get updates about your fridge'),
                   secondary: const Icon(Icons.notifications_active_outlined,
@@ -61,24 +59,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (_notificationsEnabled) ...[
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   SwitchListTile(
-                    title: const Text(
-                      'Door Open Alerts',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    subtitle:
-                        const Text('Alert when door is left open too long'),
+                    title: Text(l.doorAlerts,
+                      style: const TextStyle(fontSize: 15)),
+                    subtitle: const Text('Alert when door is left open too long'),
                     value: _doorAlerts,
                     activeTrackColor: AppTheme.primaryGreen,
                     onChanged: (val) => setState(() => _doorAlerts = val),
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   SwitchListTile(
-                    title: const Text(
-                      'Expiry Reminders',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    subtitle:
-                        const Text('Remind me before food expires'),
+                    title: Text(l.expiryReminders,
+                      style: const TextStyle(fontSize: 15)),
+                    subtitle: const Text('Remind me before food expires'),
                     value: _expiryReminders,
                     activeTrackColor: AppTheme.primaryGreen,
                     onChanged: (val) =>
@@ -86,12 +78,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   SwitchListTile(
-                    title: const Text(
-                      'Weekly Summary',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    subtitle: const Text(
-                        'Get a weekly report of food usage'),
+                    title: Text(l.weeklySummary,
+                      style: const TextStyle(fontSize: 15)),
+                    subtitle: const Text('Get a weekly report of food usage'),
                     value: _weeklyReport,
                     activeTrackColor: AppTheme.primaryGreen,
                     onChanged: (val) =>
@@ -104,8 +93,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 28),
 
-          // ─── LANGUAGE ───────────────────────────────────────
-          _buildSectionHeader('🌐 Language'),
+          // ─── LANGUAGE (real switching) ──────────────────────
+          _buildSectionHeader('🌐 ${l.language}'),
           const SizedBox(height: 12),
 
           Card(
@@ -114,31 +103,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'App Language',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                  ),
+                  Text(l.appLanguage,
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Choose your preferred language',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
+                  Text(l.chooseLanguage,
+                    style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                  const SizedBox(height: 12),
+                  ...LocaleProvider.supportedLanguages.map((lang) =>
+                    RadioListTile<Locale>(
+                      title: Text(
+                        '${lang.nativeName} (${lang.name})',
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                      value: lang.locale,
+                      groupValue: localeProvider.locale,
+                      activeColor: AppTheme.primaryGreen,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) {
+                        if (val != null) {
+                          localeProvider.setLocale(val);
+                        }
+                      },
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  ..._languages.map((lang) => RadioListTile<String>(
-                        title: Text(lang, style: const TextStyle(fontSize: 15)),
-                        value: lang,
-                        groupValue: _selectedLanguage,
-                        activeColor: AppTheme.primaryGreen,
-                        contentPadding: EdgeInsets.zero,
-                        onChanged: (val) =>
-                            setState(() => _selectedLanguage = val!),
-                      )),
                 ],
               ),
             ),
@@ -147,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ─── APPEARANCE ────────────────────────────────────
-          _buildSectionHeader('🎨 Appearance'),
+          _buildSectionHeader('🎨 ${l.appearance}'),
           const SizedBox(height: 12),
 
           Card(
@@ -156,13 +143,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Theme',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                  ),
+                  Text(l.theme,
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
                   const SizedBox(height: 12),
                   Row(
                     children: _themes
@@ -183,7 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ─── UNITS ─────────────────────────────────────────
-          _buildSectionHeader('📏 Units'),
+          _buildSectionHeader('📏 ${l.units}'),
           const SizedBox(height: 12),
 
           Card(
@@ -192,13 +174,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Temperature Unit',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                    ),
-                  ),
+                  Text(l.temperatureUnit,
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
                   const SizedBox(height: 12),
                   ..._tempUnits.map((unit) => RadioListTile<String>(
                         title: Text(unit, style: const TextStyle(fontSize: 15)),
@@ -217,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ─── ABOUT ─────────────────────────────────────────
-          _buildSectionHeader('ℹ️ About'),
+          _buildSectionHeader('ℹ️ ${l.about}'),
           const SizedBox(height: 12),
 
           Card(
@@ -226,8 +203,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.info_outline,
                       color: AppTheme.primaryGreen),
-                  title: const Text('App Version',
-                      style: TextStyle(fontSize: 15)),
+                  title: Text(l.appVersion,
+                      style: const TextStyle(fontSize: 15)),
                   trailing: const Text(
                     'v1.0.0',
                     style: TextStyle(color: AppTheme.textSecondary),
@@ -237,8 +214,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.help_outline,
                       color: AppTheme.infoBlue),
-                  title: const Text('Help & Support',
-                      style: TextStyle(fontSize: 15)),
+                  title: Text(l.helpSupport,
+                      style: const TextStyle(fontSize: 15)),
                   trailing: const Icon(Icons.chevron_right,
                       color: AppTheme.textSecondary),
                   onTap: () {
@@ -252,8 +229,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.privacy_tip_outlined,
                       color: AppTheme.accentOrange),
-                  title: const Text('Privacy Policy',
-                      style: TextStyle(fontSize: 15)),
+                  title: Text(l.privacyPolicy,
+                      style: const TextStyle(fontSize: 15)),
                   trailing: const Icon(Icons.chevron_right,
                       color: AppTheme.textSecondary),
                   onTap: () {

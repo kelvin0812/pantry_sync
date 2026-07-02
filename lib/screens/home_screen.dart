@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'dashboard_screen.dart';
 import 'inventory_screen.dart';
 import 'chef_screen.dart';
@@ -24,6 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -34,26 +37,26 @@ class _HomeScreenState extends State<HomeScreen> {
         onDestinationSelected: (index) {
           setState(() => _currentIndex = index);
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: l.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.kitchen_outlined),
-            selectedIcon: Icon(Icons.kitchen),
-            label: 'My Food',
+            icon: const Icon(Icons.kitchen_outlined),
+            selectedIcon: const Icon(Icons.kitchen),
+            label: l.myFood,
           ),
           NavigationDestination(
-            icon: Icon(Icons.restaurant_outlined),
-            selectedIcon: Icon(Icons.restaurant),
-            label: 'Chef AI',
+            icon: const Icon(Icons.restaurant_outlined),
+            selectedIcon: const Icon(Icons.restaurant),
+            label: l.chefAi,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l.settings,
           ),
         ],
       ),
