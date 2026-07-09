@@ -34,7 +34,6 @@ class _ChefScreenState extends State<ChefScreen> {
     chatProvider.sendMessage(text, inventory.items);
     _messageController.clear();
 
-    // Scroll to bottom
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -51,8 +50,13 @@ class _ChefScreenState extends State<ChefScreen> {
     final chatProvider = context.watch<ChatProvider>();
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Chef AI'),
+        title: const Text('Chef AI',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -63,6 +67,7 @@ class _ChefScreenState extends State<ChefScreen> {
       ),
       body: Column(
         children: [
+          const SizedBox(height: 100),
           // Chat messages
           Expanded(
             child: chatProvider.messages.isEmpty
@@ -72,31 +77,24 @@ class _ChefScreenState extends State<ChefScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: chatProvider.messages.length,
                     itemBuilder: (context, index) {
-                      return _buildMessageBubble(
-                          chatProvider.messages[index]);
+                      return _buildMessageBubble(chatProvider.messages[index]);
                     },
                   ),
           ),
 
           // Typing indicator
           if (chatProvider.isTyping)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
                 children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Chef is thinking...',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+                  _buildMascotSmall(),
+                  const SizedBox(width: 8),
+                  const Text('Thinking...',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      )),
                 ],
               ),
             ),
@@ -104,9 +102,42 @@ class _ChefScreenState extends State<ChefScreen> {
           // Quick suggestions
           if (chatProvider.messages.isEmpty) _buildQuickSuggestions(),
 
-          // Input field
+          // Input
           _buildInputField(),
         ],
+      ),
+    );
+  }
+
+  // ─── MASCOT ─────────────────────────────────────────────────
+  Widget _buildMascot() {
+    return Container(
+      width: 80, height: 80,
+      decoration: BoxDecoration(
+        gradient: AppTheme.lightGradient,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+            blurRadius: 16,
+          ),
+        ],
+      ),
+      child: const Center(
+        child: Text('🤖', style: TextStyle(fontSize: 40)),
+      ),
+    );
+  }
+
+  Widget _buildMascotSmall() {
+    return Container(
+      width: 28, height: 28,
+      decoration: BoxDecoration(
+        gradient: AppTheme.lightGradient,
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Text('🤖', style: TextStyle(fontSize: 14)),
       ),
     );
   }
@@ -116,28 +147,22 @@ class _ChefScreenState extends State<ChefScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.restaurant,
-            size: 64,
-            color: AppTheme.primaryGreen.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
+          _buildMascot(),
+          const SizedBox(height: 20),
           const Text(
-            'Your AI Chef Assistant',
+            'Hi! I\'m your Chef AI 🍳',
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
+              fontSize: 22, fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary),
           ),
           const SizedBox(height: 8),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
+            padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Ask me what to cook based on what\'s in your fridge. '
-              'I can suggest recipes, calculate macros, and more!',
+              'Ask me what to cook with what\'s in your fridge. '
+              'I\'ll suggest recipes with macros!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: AppTheme.textSecondary, height: 1.4),
             ),
           ),
         ],
@@ -147,29 +172,31 @@ class _ChefScreenState extends State<ChefScreen> {
 
   Widget _buildQuickSuggestions() {
     final suggestions = [
-      'What can I make for dinner?',
-      'High protein meal',
-      'Quick 15-min recipe',
-      'Post-workout dinner with 45g protein',
+      '🍽️ What for dinner?',
+      '💪 High protein meal',
+      '⏱️ Quick 15-min recipe',
     ];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      height: 50,
+      height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: suggestions.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           return ActionChip(
             label: Text(suggestions[index]),
-            backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.1),
+            backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.08),
             labelStyle: const TextStyle(
-              color: AppTheme.primaryGreen,
-              fontSize: 12,
+                color: AppTheme.primaryBlue, fontSize: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
             ),
             onPressed: () {
-              _messageController.text = suggestions[index];
+              _messageController.text = suggestions[index]
+                  .replaceAll(RegExp(r'[^\w\s?]'), '').trim();
               _sendMessage();
             },
           );
@@ -189,20 +216,15 @@ class _ChefScreenState extends State<ChefScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppTheme.primaryGreen,
-              child: const Icon(Icons.restaurant, size: 16, color: Colors.white),
-            ),
+            _buildMascotSmall(),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser
-                    ? AppTheme.primaryGreen
-                    : AppTheme.primaryGreen.withValues(alpha: 0.08),
+                gradient: isUser ? AppTheme.primaryGradient : null,
+                color: isUser ? null : AppTheme.primaryBlue.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -214,13 +236,11 @@ class _ChefScreenState extends State<ChefScreen> {
                 message.content,
                 style: TextStyle(
                   color: isUser ? Colors.white : AppTheme.textPrimary,
-                  fontSize: 14,
-                  height: 1.4,
+                  fontSize: 14, height: 1.4,
                 ),
               ),
             ),
           ),
-          if (isUser) const SizedBox(width: 8),
         ],
       ),
     );
@@ -230,7 +250,7 @@ class _ChefScreenState extends State<ChefScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -248,26 +268,28 @@ class _ChefScreenState extends State<ChefScreen> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(),
                 decoration: InputDecoration(
-                  hintText: 'Ask your Chef AI...',
-                  hintStyle: const TextStyle(color: AppTheme.textSecondary),
+                  hintText: 'Ask Chef AI...',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppTheme.backgroundLight,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
+                      horizontal: 20, vertical: 12),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            FloatingActionButton.small(
-              onPressed: _sendMessage,
-              elevation: 0,
-              child: const Icon(Icons.send_rounded),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                onPressed: _sendMessage,
+                icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              ),
             ),
           ],
         ),

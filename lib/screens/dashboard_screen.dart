@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -5,110 +6,391 @@ import '../providers/inventory_provider.dart';
 import '../providers/fridge_provider.dart';
 import '../theme/app_theme.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final inventory = context.watch<InventoryProvider>();
     final fridge = context.watch<FridgeProvider>();
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Pantry Sync'),
+        title: const Text('Pantry Sync',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No new notifications')),
-              );
-            },
+            onPressed: () {},
           ),
         ],
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
+        ),
       ),
       body: inventory.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () async {
-                await Future.delayed(const Duration(milliseconds: 500));
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  // === GREETING SECTION ===
-                  _buildGreeting(context),
-                  const SizedBox(height: 24),
+          : ListView(
+              padding: const EdgeInsets.only(top: 100, bottom: 24),
+              children: [
+                // ═══ LIVE FRIDGE PHOTO ═══
+                _buildLivePhoto(context),
+                const SizedBox(height: 20),
 
-                  // === FRIDGE CONTROL (Door + Temperature) ===
-                  _buildFridgeControl(context, fridge),
-                  const SizedBox(height: 20),
+                // ═══ DOOR STATUS ═══
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildDoorStatus(fridge),
+                ),
+                const SizedBox(height: 20),
 
-                  // === SIMPLE SUMMARY ===
-                  _buildSimpleSummary(context, inventory),
-                  const SizedBox(height: 20),
+                // ═══ SENSOR CHART (4 params) ═══
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildSensorChart(fridge),
+                ),
+                const SizedBox(height: 20),
 
-                  // === ENERGY INFO (simple) ===
-                  _buildEnergySimple(context, fridge),
-                  const SizedBox(height: 20),
+                // ═══ FRIDGE & FREEZER MODE ═══
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildFridgeModes(fridge),
+                ),
+                const SizedBox(height: 20),
 
-                  // === QUICK TIP ===
-                  _buildQuickTip(context, inventory),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                // ═══ ENERGY USAGE CHART ═══
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildEnergyChart(fridge),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
     );
   }
 
-  // ─── Greeting ───────────────────────────────────────────────
-  Widget _buildGreeting(BuildContext context) {
-    final hour = DateTime.now().hour;
-    String greeting;
-    String emoji;
-    if (hour < 12) {
-      greeting = 'Good Morning';
-      emoji = '☀️';
-    } else if (hour < 17) {
-      greeting = 'Good Afternoon';
-      emoji = '🌤️';
-    } else {
-      greeting = 'Good Evening';
-      emoji = '🌙';
-    }
+  // ─── LIVE FRIDGE PHOTO ──────────────────────────────────────
+  Widget _buildLivePhoto(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          gradient: AppTheme.cardGradient,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.primaryBlue.withValues(alpha: 0.2)),
+        ),
+        child: Stack(
+          children: [
+            // Placeholder — replace with real image from Supabase Storage
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.camera_alt_rounded,
+                      size: 48, color: AppTheme.primaryBlue.withValues(alpha: 0.4)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Live Fridge View',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Photo updates on each door close',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Live badge
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.successGreen,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, size: 8, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text('LIVE', style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    )),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // ─── DOOR STATUS ────────────────────────────────────────────
+  Widget _buildDoorStatus(FridgeProvider fridge) {
+    final isOpen = fridge.status.doorOpen;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isOpen
+            ? AppTheme.warningYellow.withValues(alpha: 0.08)
+            : AppTheme.successGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isOpen
+              ? AppTheme.warningYellow.withValues(alpha: 0.3)
+              : AppTheme.successGreen.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: (isOpen ? AppTheme.warningYellow : AppTheme.successGreen)
+                  .withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isOpen ? Icons.door_front_door : Icons.door_sliding,
+              size: 28,
+              color: isOpen ? AppTheme.warningYellow : AppTheme.successGreen,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOpen ? 'Door Opened' : 'Door Closed',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isOpen ? AppTheme.warningYellow : AppTheme.successGreen,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  isOpen ? 'Camera scanning...' : 'Everything secure ✓',
+                  style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 14, height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isOpen ? AppTheme.warningYellow : AppTheme.successGreen,
+              boxShadow: [
+                BoxShadow(
+                  color: (isOpen ? AppTheme.warningYellow : AppTheme.successGreen)
+                      .withValues(alpha: 0.4),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── INTERACTIVE SENSOR CHART (Voltage, Pressure, Temp, Humidity) ───
+  Widget _buildSensorChart(FridgeProvider fridge) {
+    final status = fridge.status;
+    // Mock sensor values for demonstration
+    final voltage = 12.2; // Volts
+    final pressure = 1.2; // Bar (compressor)
+    final temp = status.fridgeTemperature;
+    final humid = status.humidity;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.lightGradient,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.show_chart, color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text('Sensor Readings',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // 4 sensor gauges
+            Row(
+              children: [
+                _buildGauge('⚡ Voltage', '${voltage.toStringAsFixed(1)}V',
+                    voltage / 15, AppTheme.accentCyan),
+                const SizedBox(width: 10),
+                _buildGauge('🔵 Pressure', '${pressure.toStringAsFixed(1)} bar',
+                    pressure / 3, AppTheme.primaryBlue),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _buildGauge('🌡️ Temp', '${temp.toStringAsFixed(1)}°C',
+                    ((temp + 5) / 15).clamp(0, 1), AppTheme.infoBlue),
+                const SizedBox(width: 10),
+                _buildGauge('💧 Humidity', '${humid.toStringAsFixed(0)}%',
+                    humid / 100, AppTheme.lightBlue),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGauge(String label, String value, double progress, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+            const SizedBox(height: 6),
+            Text(value, style: TextStyle(
+              fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                backgroundColor: color.withValues(alpha: 0.1),
+                valueColor: AlwaysStoppedAnimation(color),
+                minHeight: 6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── FRIDGE & FREEZER MODE ──────────────────────────────────
+  Widget _buildFridgeModes(FridgeProvider fridge) {
+    final status = fridge.status;
+    return Row(
       children: [
-        Text(
-          '$greeting $emoji',
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+        Expanded(
+          child: _buildModeCard(
+            icon: Icons.thermostat,
+            title: 'Fridge',
+            value: '${status.fridgeTemperature.toStringAsFixed(1)}°C',
+            subtitle: 'Normal Mode',
+            color: AppTheme.infoBlue,
           ),
         ),
-        const SizedBox(height: 6),
-        const Text(
-          'Here\'s what\'s happening with your fridge today.',
-          style: TextStyle(
-            fontSize: 15,
-            color: AppTheme.textSecondary,
-            height: 1.4,
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildModeCard(
+            icon: Icons.severe_cold,
+            title: 'Freezer',
+            value: '${status.freezerTemperature.toStringAsFixed(1)}°C',
+            subtitle: status.energySaveMode ? 'Eco Mode' : 'Normal Mode',
+            color: AppTheme.accentCyan,
           ),
         ),
       ],
     );
   }
 
-  // ─── Fridge Control (Door + Temperature) ────────────────────
-  Widget _buildFridgeControl(BuildContext context, FridgeProvider fridge) {
-    final status = fridge.status;
+  Widget _buildModeCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const Spacer(),
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.successGreen,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(
+            fontSize: 13, color: AppTheme.textSecondary)),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(
+            fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: const TextStyle(
+            fontSize: 11, color: AppTheme.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  // ─── ENERGY USAGE CHART ─────────────────────────────────────
+  Widget _buildEnergyChart(FridgeProvider fridge) {
+    final history = fridge.energyHistory;
+    final weeklyTotal = history.fold(0.0, (sum, v) => sum + v);
 
     return Card(
       child: Padding(
@@ -116,413 +398,112 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
-            const Row(
+            Row(
               children: [
-                Icon(Icons.kitchen, color: AppTheme.primaryGreen, size: 22),
-                SizedBox(width: 10),
-                Text(
-                  'Fridge Status',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.lightGradient,
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  child: const Icon(Icons.bolt, color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text('Energy Usage',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${weeklyTotal.toStringAsFixed(1)} kWh',
+                        style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue)),
+                    const Text('this week',
+                        style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Door sensor - big and clear
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: status.doorOpen
-                    ? AppTheme.warningYellow.withValues(alpha: 0.1)
-                    : AppTheme.successGreen.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: status.doorOpen
-                      ? AppTheme.warningYellow.withValues(alpha: 0.3)
-                      : AppTheme.successGreen.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    status.doorOpen
-                        ? Icons.door_front_door
-                        : Icons.door_sliding,
-                    size: 36,
-                    color: status.doorOpen
-                        ? AppTheme.warningYellow
-                        : AppTheme.successGreen,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          status.doorOpen ? 'Door is Open' : 'Door is Closed',
-                          style: TextStyle(
-                            fontSize: 17,
+            // Bar chart
+            SizedBox(
+              height: 140,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: history.reduce((a, b) => a > b ? a : b) * 1.3,
+                  barTouchData: BarTouchData(
+                    enabled: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        return BarTooltipItem(
+                          '${rod.toY.toStringAsFixed(2)} kWh',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: status.doorOpen
-                                ? AppTheme.warningYellow
-                                : AppTheme.successGreen,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          status.doorOpen
-                              ? 'Camera will scan when you close it'
-                              : 'Everything is secure ✓',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(days[value.toInt()],
+                                style: const TextStyle(
+                                  fontSize: 11, color: AppTheme.textSecondary)),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  gridData: const FlGridData(show: false),
+                  barGroups: history.asMap().entries.map((entry) {
+                    final isToday = entry.key == history.length - 1;
+                    return BarChartGroupData(
+                      x: entry.key,
+                      barRods: [
+                        BarChartRodData(
+                          toY: entry.value,
+                          gradient: isToday
+                              ? const LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [AppTheme.primaryBlue, AppTheme.lightBlue],
+                                )
+                              : null,
+                          color: isToday ? null : AppTheme.primaryBlue.withValues(alpha: 0.25),
+                          width: 22,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(6),
+                            topRight: Radius.circular(6),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  // Status dot
-                  Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: status.doorOpen
-                          ? AppTheme.warningYellow
-                          : AppTheme.successGreen,
-                    ),
-                  ),
-                ],
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Temperature row - simple and large
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTempBox(
-                    icon: Icons.thermostat,
-                    label: 'Fridge',
-                    value: '${status.fridgeTemperature.toStringAsFixed(1)}°C',
-                    color: AppTheme.infoBlue,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTempBox(
-                    icon: Icons.severe_cold,
-                    label: 'Freezer',
-                    value: '${status.freezerTemperature.toStringAsFixed(1)}°C',
-                    color: AppTheme.primaryGreen,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTempBox(
-                    icon: Icons.water_drop_outlined,
-                    label: 'Humidity',
-                    value: '${status.humidity.toStringAsFixed(0)}%',
-                    color: AppTheme.accentOrange,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTempBox({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Simple Summary (what's in your fridge) ─────────────────
-  Widget _buildSimpleSummary(
-      BuildContext context, InventoryProvider inventory) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.restaurant_menu,
-                    color: AppTheme.accentOrange, size: 22),
-                SizedBox(width: 10),
-                Text(
-                  'What\'s in Your Fridge',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Big number
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${inventory.itemCount}',
-                  style: const TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryGreen,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    'items detected',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Macro summary - friendly labels
-            Row(
-              children: [
-                _buildMacroChip(
-                    '🥩', '${inventory.totalProtein.toStringAsFixed(0)}g',
-                    'Protein'),
-                const SizedBox(width: 8),
-                _buildMacroChip(
-                    '🍚', '${inventory.totalCarbs.toStringAsFixed(0)}g',
-                    'Carbs'),
-                const SizedBox(width: 8),
-                _buildMacroChip(
-                    '🧈', '${inventory.totalFat.toStringAsFixed(0)}g',
-                    'Fats'),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Text(
-                  '🔥',
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${inventory.totalCalories.toStringAsFixed(0)} calories available',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMacroChip(String emoji, String value, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.backgroundLight,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 6),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Energy (simple) ────────────────────────────────────────
-  Widget _buildEnergySimple(BuildContext context, FridgeProvider fridge) {
-    final status = fridge.status;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.accentOrange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.bolt,
-                  color: AppTheme.accentOrange, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Energy Usage',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${status.energyUsageWatts.toStringAsFixed(0)}W now • ${status.dailyEnergyKwh.toStringAsFixed(1)} kWh today',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Eco mode indicator
-            if (status.energySaveMode)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.successGreen.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.eco, size: 14, color: AppTheme.successGreen),
-                    SizedBox(width: 4),
-                    Text(
-                      'Eco',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.successGreen,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Quick Tip ──────────────────────────────────────────────
-  Widget _buildQuickTip(BuildContext context, InventoryProvider inventory) {
-    // Simple contextual tip
-    String tip;
-    IconData tipIcon;
-    if (inventory.itemCount > 5) {
-      tip = 'You have plenty of ingredients! Ask Chef AI for a recipe idea.';
-      tipIcon = Icons.lightbulb_outline;
-    } else if (inventory.itemCount > 0) {
-      tip = 'Running low on items. Consider restocking soon.';
-      tipIcon = Icons.info_outline;
-    } else {
-      tip = 'Your fridge is empty. Items will appear after the next scan.';
-      tipIcon = Icons.kitchen;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryGreen.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.primaryGreen.withValues(alpha: 0.15),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(tipIcon, color: AppTheme.primaryGreen, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              tip,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppTheme.textPrimary,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -28,7 +28,7 @@ class FoodRecognitionService {
   /// Get your key from: https://aistudio.google.com/app/apikey
   void initialize(String apiKey) {
     _model = GenerativeModel(
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash-lite',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
         temperature: 0.2, // Low temperature for factual responses

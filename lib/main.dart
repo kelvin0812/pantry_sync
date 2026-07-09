@@ -10,6 +10,7 @@ import 'providers/chat_provider.dart';
 import 'providers/locale_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/supabase_service.dart';
+import 'services/auto_scan_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -29,6 +30,9 @@ void main() async {
   // Load saved language preference
   final localeProvider = LocaleProvider();
   await localeProvider.loadSavedLocale();
+
+  // Initialize auto-scan service (watches for new food images)
+  AutoScanService().initialize();
 
   runApp(PantrySyncApp(localeProvider: localeProvider));
 }
